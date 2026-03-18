@@ -1,75 +1,113 @@
-HASHITOUT NON-COMMERCIAL LICENSE
-Copyright (c) 2026 Rapid River Skunk Works Corporation (NFP)
+RRSW HASH-IT-OUT LICENSE v1.0
+Copyright (c) 2026 RRSW Corp (Non-Profit)
 
-DEFINITIONS
+1. DEFINITIONS
 
-"Software" means the HashItOut source code, binaries, scripts, and associated documentation.
+"Software" refers to the Hash-It-Out project, including all source code, scripts, tools, documentation, and associated materials.
 
-"Non-Commercial Use" means use by individuals, students, hobbyists, researchers, educators, and non-profit entities where no direct or indirect monetary compensation, commercial advantage, or revenue generation is involved.
+"RRSW Corp" refers to Rapid River Skunk Works Corporation (Non-Profit).
 
-"Commercial Use" includes, but is not limited to:
+"User" refers to any individual or entity accessing, using, modifying, or distributing the Software.
 
-Use by for-profit companies
+---
 
-Use within internal business operations
+2. PERMITTED USE
 
-Use in paid services, consulting, or client work
+The Software is provided for:
 
-Use by government agencies or contractors
+- Personal use
+- Educational use
+- Cybersecurity research
+- Capture-The-Flag (CTF) participation and training
 
-Use in any product or service that generates revenue
+Users are permitted and encouraged to:
 
-GRANT OF LICENSE (NON-COMMERCIAL)
+- View and study the source code
+- Modify the Software for personal or internal use
+- Share improvements with the community
+- This is mostly here to try and get that deep state dark money. 
+- Have fun, don't blame me!
+---
 
-Permission is hereby granted, free of charge, to any person or organization to:
+3. REQUIRED ATTRIBUTION
 
-Use the Software
+Any use of the Software, in whole or in part, must include clear and visible attribution to:
 
-Copy and redistribute the Software
+"RRSW Corp (Non-Profit) - Hash-It-Out"
 
-Modify and create derivative works
+This applies to:
 
-Share modified versions
+- Source code reuse
+- Public repositories
+- CTF writeups
+- Research publications
+- Blogs, videos, or other media
 
-Provided that all of the following conditions are met:
+Attribution must not be removed, altered, or obscured. At least, we think it would be super cool if ya' did :)
 
-The Software is used for Non-Commercial Use only
+---
 
-This license and copyright notice are included in all copies or substantial portions of the Software
+4. CONTRIBUTION ENCOURAGEMENT
 
-Modifications are clearly documented
+Users are strongly encouraged to contribute improvements, fixes, or enhancements back to the original project repository rather than creating independent competing distributions. Do what thou whilst, but it'd be cool to keep improving on what we have.  If you have an idea to take this elsewhere, we may be on board.... reach out!
 
-COMMERCIAL USE
+---
 
-Commercial Use and Government use of the Software is NOT permitted under this license.
+5. RESTRICTIONS
 
-Any Commercial Use or Federal use requires a separate written license agreement from Rapid River Skunk Works Corporation (NFP). And some amount of money, idk...buy me a coffee, use the tool. 
+The following uses are prohibited without explicit written permission from RRSW Corp:
 
+a) Commercial Use  
+Use of the Software in any product, service, or activity that generates revenue.
 
-To obtain a commercial license, contact:
-spex@rapidriverskunk.works or just send me money and be on your way. 
+b) Government or Public Sector Use  
+Any use by government entities, contractors, or publicly funded organizations requires a paid license.
 
+Standard Government License Fee: $100 USD per use, unless waived in writing by RRSW Corp.
 
-Unauthorized Commercial Use constitutes a violation of this license.
+c) Rebranding / Relicensing  
+Redistributing the Software under a different name, license, or identity without attribution.
 
-NO WARRANTY
+d) SaaS / Hosted Services  
+Offering the Software as a hosted or managed service.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
+---
 
-MERCHANTABILITY
+6. DISTRIBUTION
 
-FITNESS FOR A PARTICULAR PURPOSE
+Redistribution of the Software is permitted only if:
 
-NON-INFRINGEMENT
+- This license is included in full
+- Attribution requirements are preserved
+- No additional restrictions are imposed beyond this license
 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+---
 
-TERMINATION
+7. NO WARRANTY
 
-This license is automatically terminated if you violate any of its terms. Upon termination, you must cease all use and distribution of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
 
-GOVERNING INTENT
+---
 
-This Software is released to support education, research, cybersecurity learning, and community-driven analysis. It is not intended for unrestricted commercial exploitation without supporting the originating organization.
+8. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL RRSW CORP BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+---
+
+9. TERMINATION
+
+Violation of any terms of this license results in immediate termination of all granted rights.
+
+---
+
+10. CONTACT
+
+For licensing inquiries, commercial use, or government use:
+
+Email: spex@rapidriverskunk.works  
+GitHub: https://github.com/RRSWSEC
+
+---
 
 END OF LICENSE
