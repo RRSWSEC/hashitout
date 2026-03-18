@@ -1,5 +1,7 @@
 # Hash It Out (HIO)
 
+** i'm just gonna go live.... I can't keep dogging on this poor thing. We want you('re fingers and brain!) See CONTRIBUTING.md **
+
 yeah… this started as  
 “lemme just decode this one thing real quick”
 
