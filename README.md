@@ -9,6 +9,10 @@ yes, this started as:
 
 and turned into this.
 
+this was not vibe coded or whatever. claude was used, chat gpt was used, human brains were used, people and machines were orchestrated and directed to make a vision come to life completely and properly.
+
+-spex-thementor-aven
+
 if you've ever seen:
 
 ```
