@@ -1,6 +1,6 @@
 # Contributing to Hash-It-Out
 
-If you're here to make this better - good. That's the point.
+If you're here to make this better - good. That's the point.  Have a specific solve this failed? Know that it has an answer but either never found it or know what it is, but hashitout didn't find it? We would LOVE this info.  Reach out directly to thementor@rapidriverskunk.works or aven@rapidriverskunk.works If you've got someting to share, or do it through github.
 
 If you're here to fork it, rename it, and pretend you built it - you're in the wrong place.
 
