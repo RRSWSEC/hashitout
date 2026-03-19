@@ -3,12 +3,13 @@
 </p>
 # Hash It Out (HIO)
 
-yeah… this started as  
-“lemme just decode this one thing real quick”
+yes, this started as:
 
-and turned into this
+> “lemme just decode this one thing real quick”
 
-if you’ve ever stared at something like:
+and turned into this.
+
+if you've ever seen:
 
 ```
 4WZr9mci1CdzVnc01Saml2dtQ3clV3Z
@@ -16,31 +17,31 @@ if you’ve ever stared at something like:
 
 and immediately knew:
 
-> this is layered  
-> this is cursed  
-> and i am not opening cyberchef again  
+- this is layered
+- this is cursed
+- i am not opening cyberchef again
 
-this is for you
+this is for you.
 
 ---
 
 ## what it is
 
-**Hash It Out** is a single-file, self-installing CLI tool that:
+**Hash It Out** is a single-file, self-installing CLI that:
 
-- decodes the obvious stuff instantly  
-- brute forces the stuff you don’t want to  
-- recursively peels layered encodings  
-- carves files out of raw blobs  
-- ranks results so you’re not drowning in noise  
-- tells you *why* something looks correct  
+- decodes obvious stuff instantly
+- brute-forces the annoying stuff automatically
+- recursively peels layered encodings
+- carves files from raw blobs
+- ranks results so you can focus
+- explains why a candidate looks strong
 
 built for:
 
-- CTF players  
-- OSINT  
-- DFIR  
-- people who are tired of guessing transforms manually  
+- CTF players
+- OSINT analysts
+- DFIR teams
+- anyone tired of manual transforms
 
 ---
 
@@ -55,85 +56,63 @@ hashitout --shell
 
 ---
 
-## modes (use these, seriously)
+## recommended modes
 
 ### `--fast`
-quick sanity pass, no expensive operations  
+quick sanity pass, no expensive stuff.
 
 ### `--standard`
-default behavior, balanced  
+default and balanced.
 
 ### `--ctf`
-aggressive layered decoding  
-xor, classical, reverse, chaining  
+aggressive layered decoding: xor, classical, reverse, chaining.
 
 ### `--deep-mode`
-go deeper than you probably need  
-slower, but thorough  
+slower, deeper, more brute.
 
 ### `--forensics`
-file carving  
-embedded data detection  
-binary artifact analysis  
+file carving, embedded data detection, binary artifact analysis.
 
 ---
 
-## what makes this different
+## why this stands out
 
-### 1. scoring system
+### 1) scoring that actually helps
 
-not everything is dumped equally
+results are ranked by:
 
-results are ranked based on:
+- readability
+- entropy
+- known patterns
+- flag format matches
+- structural sanity
 
-- readability  
-- entropy  
-- known patterns  
-- flag formats  
-- structural sanity  
+### 2) chain tracking
 
----
-
-### 2. chain tracking
-
-you don’t just get output, you get the path:
+you get the decoding path, not just output.
 
 ```
 base64 -> xor(0x23) -> reverse -> rot13
 ```
 
-no more “wait what did i just try?”
-
----
-
-### 3. explain mode
+### 3) explain mode
 
 ```bash
 --explain
 ```
 
-tells you *why* something ranked high  
+tells you why a result scored high.
 
-useful when you’re not sure if something is legit or coincidence  
+### 4) RRSW signal system
 
----
+- **RRSW-SIGMA** → likely solve
+- **RRSW-TRACK** → strong lead
+- **RRSW-TRACE** → maybe
+- **RRSW-NOISE** → ignore
 
-### 4. RRSW signal system
+your brain doesn’t have to triage everything.
 
-every result is classified:
-
-- **RRSW-SIGMA** → this is probably it  
-- **RRSW-TRACK** → strong lead  
-- **RRSW-TRACE** → maybe  
-- **RRSW-NOISE** → ignore  
-
-this keeps your brain from melting mid-CTF  
-
----
-
-### 5. interactive shell
-
-this is where it actually becomes a workflow tool
+### 5) interactive shell
 
 ```bash
 hashitout --shell
@@ -149,7 +128,7 @@ use 1
 save 1
 ```
 
-you can **walk the problem** instead of rerunning commands over and over  
+walk the problem interactively instead of re-running guesses.
 
 ---
 
@@ -164,19 +143,13 @@ hashitout "..." --ctf --explain
 
 ---
 
-## install (optional)
+## install
 
 ```bash
 python hashitout.py --install
 ```
 
-installs to:
-
-```
-/usr/local/bin/hashitout
-```
-
-so you can just run:
+installs to `/usr/local/bin/hashitout` so you can run:
 
 ```bash
 hashitout "input"
@@ -188,30 +161,30 @@ hashitout "input"
 
 only run this on:
 
-- data you own  
-- challenges you’re allowed to solve  
-- environments you’re authorized to analyze  
+- data you own
+- challenges you're allowed to solve
+- systems you're authorized to analyze
 
-don’t be weird with it  
+don’t be weird.
 
 ---
 
 ## final note
 
-this tool exists because:
+this exists because:
 
-- repeating the same transforms sucks  
-- losing track of what you tried sucks  
-- second guessing results sucks  
+- repeating transforms sucks
+- losing the chain sucks
+- second guessing results sucks
 
-this fixes that
+this fixes that.
 
-if it helps you, good  
-if you break it, even better  
+if it helps, good.
+if you break it, even better.
 
-tell me
+tell me.
 
-there will be future improvements. collaberation is welcomed. 
+future improvements incoming. collaboration welcome.
 
 ---
 
