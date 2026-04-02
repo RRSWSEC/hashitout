@@ -521,13 +521,6 @@ def decode_atbash(text: str) -> str:
             result.append(ch)
     return ''.join(result)
 
-COMMON_VIGENERE_KEYS = [
-    'key','secret','password','abc','flag','cipher','hack','leet',
-    'admin','root','code','virus','ctf','crypto','hidden','stego',
-    'pass','test','hio','hashitout','pwn','exploit','hacker',
-    'hello','world','python','linux','windows','security','reverse',
-    'decode','encode','base','shift','alpha','beta','gamma','delta',
-]
 
 def decode_vigenere(text: str, key: str) -> str:
     key = key.lower()
@@ -2537,18 +2530,6 @@ handles all terminal output and file report generation.
 clean filenames, per-run output subfolders, proper v4 branding.
 """
 
-def _print_finding(f, index, color=None):
-    color = color or C.WHITE
-    print(f"\n  [{index:03d}] {f.method}")
-    print(f"        Confidence : {f.confidence}  |  FILE: {f.filetype[1] if f.filetype else 'n/a'}")
-    print(f"        Note       : {f.note}")
-    if f.result_text:
-        lines = str(f.result_text)[:2000].split('\n')
-        print(f"        Output     :")
-        for line in lines[:30]:
-            print(f"          | {line}")
-        if len(lines) > 30:
-            print(f"          | ... [{len(str(f.result_text))} chars total]")
 
 class C:
     RESET   = '\033[0m'
@@ -3510,26 +3491,26 @@ class AnalysisEngine:
     def _try_bases(self, data: str) -> List[Finding]:
         findings = []
         bases = [
-            ('Base2 (Binary)',           decode_base2),
-            ('Base8 (Octal)',            decode_base8),
-            ('Base10 (Decimal bytes)',   decode_base10),
-            ('Base16 (Hex)',             decode_base16),
-            ('Base32',                   decode_base32),
-            ('Base32 (Extended Hex)',    decode_base32hex),
-            ('Base32 (Crockford)',       decode_base32_crockford),
-            ('Base36',                   decode_base36),
-            ('Base45',                   decode_base45),
-            ('Base58 (Bitcoin)',         decode_base58),
-            ('Base58 (Flickr)',          decode_base58_flickr),
-            ('Base62',                   decode_base62),
-            ('Base64',                   decode_base64),
-            ('Base64 (URL-safe)',        decode_base64_url),
-            ('Base64 (MIME)',            decode_base64_mime),
-            ('Base85 (Python)',          decode_base85),
-            ('Base85 (ASCII85/Adobe)',   decode_ascii85),
-            ('Base85 (Z85/ZeroMQ)',      decode_z85),
-            ('Base91',                   decode_base91),
-            ('Base92',                   decode_base92),
+            ('Base64', decode_base64),
+            ('Base64 (URL-safe)', decode_base64_url),
+            ('Base64 (MIME)', decode_base64_mime),
+            ('Base32', decode_base32),
+            ('Base32 (Extended Hex)', decode_base32hex),
+            ('Base32 (Crockford)', decode_base32_crockford),
+            ('Base16 (Hex)', decode_base16),
+            ('Base85 (Python)', decode_base85),
+            ('Base85 (ASCII85/Adobe)', decode_ascii85),
+            ('Base85 (Z85/ZeroMQ)', decode_z85),
+            ('Base58 (Bitcoin)', decode_base58),
+            ('Base58 (Flickr)', decode_base58_flickr),
+            ('Base62', decode_base62),
+            ('Base45', decode_base45),
+            ('Base91', decode_base91),
+            ('Base92', decode_base92),
+            ('Base36', decode_base36),
+            ('Base10 (Decimal bytes)', decode_base10),
+            ('Base8 (Octal)', decode_base8),
+            ('Base2 (Binary)', decode_base2),
         ]
         for name, fn in bases:
             result = fn(data)
@@ -3537,48 +3518,49 @@ class AnalysisEngine:
                 continue
             ft = detect_filetype(result)
             if ft:
-                findings.append(Finding(
-                    method=name, result_bytes=result,
-                    filetype=ft, confidence='HIGH',
-                    note=f'decoded binary → {ft[1]}'))
-            else:
-                text = safe_decode_bytes(result)
-                if is_mostly_printable(text, threshold=0.75):
-                    conf, note = self._text_quality(text)
-                    findings.append(Finding(method=name, result_text=text,
-                                            confidence=conf, note=note))
+                findings.append(Finding(method=name, result_bytes=result, filetype=ft,
+                                        confidence='HIGH', note=f'decoded binary -> {ft[1]}'))
+                continue
+            text = safe_decode_bytes(result)
+            conf, note = self._text_quality(text)
+            if conf in ('CONFIRMED', 'HIGH', 'MEDIUM'):
+                findings.append(Finding(method=name, result_text=text,
+                                        confidence=conf, note=note))
         return findings
 
     def _try_hex(self, data: str) -> List[Finding]:
         findings = []
-        for label, fn in [('Hexadecimal', decode_hex),
-                           ('Hex (escaped \\x/% format)', decode_hex_escaped)]:
+        for label, fn in [('Hexadecimal', decode_hex), ('Hex (escaped \\x/% format)', decode_hex_escaped)]:
             result = fn(data)
             if not result:
                 continue
             ft = detect_filetype(result)
             if ft:
-                findings.append(Finding(method=f'{label} → Binary',
-                                        result_bytes=result, filetype=ft,
-                                        confidence='HIGH',
+                findings.append(Finding(method=f'{label} -> Binary', result_bytes=result,
+                                        filetype=ft, confidence='HIGH',
                                         note=f'hex decoded to {ft[1]}'))
-            else:
-                text = safe_decode_bytes(result)
-                conf, note = self._text_quality(text)
-                if conf in ('HIGH', 'MEDIUM'):
-                    findings.append(Finding(method=f'{label} → ASCII',
-                                            result_text=text,
-                                            confidence=conf, note=note))
+                continue
+            text = safe_decode_bytes(result)
+            conf, note = self._text_quality(text)
+            if conf in ('CONFIRMED', 'HIGH', 'MEDIUM'):
+                findings.append(Finding(method=f'{label} -> ASCII', result_text=text,
+                                        confidence=conf, note=note))
         return findings
 
     def _try_binary(self, data: str) -> List[Finding]:
         findings = []
-        for label, fn in [('Binary (01 string)', decode_base2),
-                           ('Octal', decode_base8)]:
+        for label, fn in [('Binary (01 string)', decode_base2), ('Octal', decode_base8), ('Decimal bytes', decode_base10)]:
             result = fn(data)
-            if result:
-                text = safe_decode_bytes(result)
-                conf, note = self._text_quality(text)
+            if not result:
+                continue
+            ft = detect_filetype(result)
+            if ft:
+                findings.append(Finding(method=label, result_bytes=result, filetype=ft,
+                                        confidence='HIGH', note=f'decoded binary -> {ft[1]}'))
+                continue
+            text = safe_decode_bytes(result)
+            conf, note = self._text_quality(text)
+            if conf in ('CONFIRMED', 'HIGH', 'MEDIUM'):
                 findings.append(Finding(method=label, result_text=text,
                                         confidence=conf, note=note))
         return findings
@@ -3758,25 +3740,100 @@ class AnalysisEngine:
                 ))
 
         return findings
+        profile = _classify_cipher_profile(data, b'')
+        profile_finding = _cipher_profile_finding(data, b'')
+        if profile_finding:
+            findings.append(profile_finding)
+        hints = _parameter_hint_finding(data, b'')
+        if hints:
+            findings.append(hints)
+        alpha = ''.join(c for c in data if c.isalpha())
+        if len(alpha) >= 10:
+            periods = estimate_vigenere_key_lengths(data, top_n=6)
+            for score, key, plain, period in _recover_vigenere_candidates(data, periods=periods, top_n=8):
+                conf, note = self._text_quality(plain)
+                total = score + (_ngram_score(plain) * 8.0) + (_word_density(plain, self.wordlist) * 40.0)
+                if conf in ('HIGH', 'MEDIUM') or total > 10:
+                    findings.append(Finding(
+                        method=f'Vigenère full recovery (key="{key}", period={period})',
+                        result_text=plain,
+                        confidence='HIGH' if total > 28 else conf,
+                        note=(note + f'; recovered key candidate {key}; period {period}')[:260]
+                    ))
+            if 0.055 <= profile['ic'] <= 0.085 and len(alpha) >= 12:
+                aff_best = []
+                for a in [1,3,5,7,9,11,15,17,19,21,23,25]:
+                    for b in range(26):
+                        plain = decode_affine(data, a, b)
+                        if not plain:
+                            continue
+                        score = (_ngram_score(plain) * 5.0) + (_word_density(plain, self.wordlist) * 35.0) - min(_chi_squared_english(plain), 200.0) / 30.0
+                        aff_best.append((score, a, b, plain))
+                aff_best.sort(reverse=True)
+                for score, a, b, plain in aff_best[:4]:
+                    conf, note = self._text_quality(plain)
+                    if conf in ('HIGH', 'MEDIUM') or score > 8:
+                        findings.append(Finding(method=f'Affine candidate (a={a}, b={b})', result_text=plain, confidence=conf, note=(note + '; affine parameters ranked by tetragrams / words')[:240]))
+            for width in estimate_transposition_widths(data, top_n=4):
+                plain = _columnar_untranspose(data, width)
+                if plain:
+                    conf, note = self._text_quality(plain)
+                    score = (_ngram_score(plain) * 6.0) + (_word_density(plain, self.wordlist) * 24.0)
+                    if conf in ('HIGH','MEDIUM') or score > 4:
+                        findings.append(Finding(method=f'Columnar/width candidate ({width})', result_text=plain, confidence=conf, note=(note + '; width chosen by IC / ngram ranking')[:240]))
+            if profile['family'].startswith('monoalphabetic') or profile['family'].startswith('transposition'):
+                freq = collections.Counter(c.lower() for c in data if c.isalpha())
+                common = ''.join(ch for ch, _ in freq.most_common(8))
+                findings.append(Finding(method='Substitution Helper', result_text='top ciphertext letters: ' + common + '\ncommon english targets: etaoinsh', confidence='LOW', note='partial progress helper for hard monoalphabetic cases'))
+        return findings
 
     def _try_xor(self, data: str) -> List[Finding]:
         findings = []
+        candidates = []
+        seen = set()
+        def add_blob(blob):
+            if blob and blob not in seen:
+                seen.add(blob)
+                candidates.append(blob)
         try:
-            raw = data.encode('latin-1')
+            add_blob(data.encode('latin-1'))
         except Exception:
-            return findings
-        for key, text in try_xor_keys(raw):
-            conf, note = self._text_quality(text)
-            if conf == 'HIGH':
-                findings.append(Finding(
-                    method=f'XOR single-byte (key=0x{key:02X})',
-                    result_text=text, confidence=conf, note=note))
-        for key, text in try_xor_multibyte(raw):
-            conf, note = self._text_quality(text)
-            if conf == 'HIGH':
-                findings.append(Finding(
-                    method=f'XOR multi-byte (key=0x{key.hex().upper()})',
-                    result_text=text, confidence=conf, note=note))
+            pass
+        for fn in (decode_hex, decode_base64, decode_base64_url, decode_base32):
+            try:
+                b = fn(data)
+                if b:
+                    add_blob(b)
+            except Exception:
+                pass
+        short_input = len(data.strip()) < 12
+        for raw in candidates:
+            for key, text in try_xor_keys(raw):
+                conf, note = self._text_quality(text)
+                if conf in ('HIGH', 'MEDIUM'):
+                    score = _xor_rank_text(text, f'0x{key:02X}')
+                    if short_input and score < 35:
+                        continue
+                    findings.append(Finding(
+                        method=f'XOR single-byte (key=0x{key:02X})',
+                        result_text=text, confidence=conf, note=note))
+            for key, text in try_xor_multibyte(raw):
+                conf, note = self._text_quality(text)
+                if conf in ('HIGH', 'MEDIUM'):
+                    score = _xor_rank_text(text, key.hex())
+                    if short_input and score < 45:
+                        continue
+                    findings.append(Finding(
+                        method=f'XOR multi-byte (key=0x{key.hex().upper()})',
+                        result_text=text, confidence=conf, note=note))
+            for score, key, text, ksize in break_repeating_key_xor(raw, top_n=6):
+                conf, note = self._text_quality(text)
+                if conf in ('HIGH', 'MEDIUM') or score > 40:
+                    findings.append(Finding(
+                        method=f'XOR repeating-key (keysize={ksize}, key=0x{key.hex().upper()})',
+                        result_text=text,
+                        confidence=('HIGH' if score > 70 else conf),
+                        note=f'{note}; repeating-key xor keysize candidate {ksize}'))
         return findings
 
     def _try_misc(self, data: str) -> List[Finding]:
@@ -3849,7 +3906,12 @@ class AnalysisEngine:
         return findings
 
     def _run_text_passes(self, data: str) -> List[Finding]:
+        cache_key = ('text_passes', hashlib.sha1(data.encode('utf-8', errors='ignore')).hexdigest(), tuple(sorted(k for k,v in self.flags.items() if v)))
+        hit = _cache_get(cache_key)
+        if hit is not None:
+            return _clone_findings(hit)
         findings = []
+        findings += self._try_structural(data)
         findings += self._try_rots(data)
         findings += self._try_bases(data)
         findings += self._try_hex(data)
@@ -3857,6 +3919,10 @@ class AnalysisEngine:
         findings += self._try_url(data)
         findings += self._try_morse(data)
         findings += self._try_ciphers(data)
+        findings += self._try_xor(data)
+        findings += self._try_misc(data)
+        findings = _finalize_findings(findings, 'TEXT_PASS', self.wordlist)
+        _cache_put(cache_key, _clone_findings(findings))
         return findings
 
     def _try_get_bytes(self, data: str) -> Optional[bytes]:
@@ -3869,15 +3935,18 @@ class AnalysisEngine:
     def _text_quality(self, text: str) -> tuple:
         if not text or not text.strip():
             return ('LOW', 'empty result')
-        ratio = sum(1 for c in text if c in string.printable) / len(text)
-        word_match = is_mostly_words(text, self.wordlist) if self.wordlist else False
-        if word_match and ratio > 0.85:
-            return ('HIGH', 'matches dictionary words')
-        elif ratio > 0.95:
-            return ('MEDIUM', 'mostly printable ASCII')
-        elif ratio > 0.75:
-            return ('LOW', 'partially printable')
-        return ('LOW', 'low printable ratio')
+        ratio = _hio_printable_ratio(text)
+        alpha = _hio_alpha_ratio(text)
+        score = _score_candidate(text=text, wordlist=self.wordlist, confidence='LOW')
+        if re.search(r'(flag|ctf|rrsw|htb|picoctf|thm)\{[^}]{3,}\}', text.lower()):
+            return ('CONFIRMED', f'scored {score} and matches flag pattern')
+        if score >= 62 or (ratio > 0.96 and alpha > 0.55 and (is_mostly_words(text, self.wordlist, 0.20) if self.wordlist else False)):
+            return ('HIGH', f'scored {score} with strong plaintext indicators')
+        if score >= 38 or (ratio > 0.92 and alpha > 0.40):
+            return ('MEDIUM', f'scored {score} and is mostly readable')
+        if ratio > 0.78:
+            return ('LOW', f'scored {score} with partial plaintext indicators')
+        return ('LOW', f'scored {score} with weak plaintext indicators')
 
     def _has_word_content(self, text: str) -> bool:
         if not self.wordlist:
@@ -4369,22 +4438,6 @@ def estimate_rail_fence_candidates(text: str, max_rails: int = 10, top_n: int = 
     scored.sort(reverse=True)
     return [r for _, r in scored[:top_n]]
 
-def _ic_for_period(text: str, period: int) -> float:
-    cols = ['' for _ in range(period)]
-    j = 0
-    for ch in text:
-        if ch.isalpha():
-            cols[j % period] += ch.lower()
-            j += 1
-    vals = []
-    for col in cols:
-        n = len(col)
-        if n < 2:
-            continue
-        counts = collections.Counter(col)
-        ic = sum(v * (v - 1) for v in counts.values()) / (n * (n - 1))
-        vals.append(ic)
-    return sum(vals) / len(vals) if vals else 0.0
 
 def _best_caesar_shift_for_column(column: str):
     best = None
@@ -4774,275 +4827,154 @@ _FAST_TRANSFORMS = (
 )
 
 def _apply_transform(text, name):
-    import base64, binascii, urllib.parse, html
+    """Route a named transform. Returns str or None."""
+    import base64 as _b64, urllib.parse, html as _html
 
-    try:
-        if name == 'reverse':
-            return text[::-1]
+    def _pr(s):
+        return sum(1 for c in s if 32<=ord(c)<=126)/max(len(s),1)
 
-        elif name == 'atbash':
-            return "".join(
-                chr(65+25-(ord(c)-65)) if c.isupper() else
-                chr(97+25-(ord(c)-97)) if c.islower() else c
-                for c in text)
-
-        elif name.startswith('rot'):
-            n = int(name[3:])
-            return "".join(
-                chr((ord(c)-65+n)%26+65) if c.isupper() else
-                chr((ord(c)-97+n)%26+97) if c.islower() else c
-                for c in text)
-
-        elif name == 'base64':
-            r = base64.b64decode(text + '==').decode('utf-8', errors='ignore')
-            return r if len(r) > 2 else None
-
-        elif name == 'base64url':
-            r = base64.urlsafe_b64decode(text + '==').decode('utf-8', errors='ignore')
-            return r if len(r) > 2 else None
-
-        elif name == 'base32':
-            r = base64.b32decode(text.upper() + '=' * ((8 - len(text)%8)%8)).decode('utf-8', errors='ignore')
-            return r if len(r) > 2 else None
-
-        elif name == 'hex':
-            clean = text.replace(' ','').replace('0x','').replace('\\x','')
-            if all(c in '0123456789abcdefABCDEF' for c in clean) and len(clean) % 2 == 0:
-                return bytes.fromhex(clean).decode('utf-8', errors='ignore')
-            return None
-
-        elif name == 'url':
-            r = urllib.parse.unquote(text)
-            return r if r != text else None
-
-        elif name == 'html':
-            r = html.unescape(text)
-            return r if r != text else None
-
-        elif name == 'morse':
-            return decode_morse(text)
-
-        elif name == 'binary':
-            tokens = text.strip().split()
-            if all(all(c in '01' for c in t) and len(t) == 8 for t in tokens):
-                return ''.join(chr(int(t,2)) for t in tokens)
-            return None
-
-        elif name == 'a1z26':
-            tokens = re.split(r'[\s,.-]+', text.strip())
-            try:
-                nums = [int(t) for t in tokens if t]
-                if all(1 <= n <= 26 for n in nums):
-                    return ''.join(chr(n+64) for n in nums)
-            except: pass
-            return None
-
-        elif name == 'caesar_brute':
-            return None
-
-    except Exception:
-        return None
-    if name in ('bacon_ab', 'bacon_01', 'bacon_io'):
+    def _b32(t):
         try:
-            t = text.upper().replace(' ','')
-            if name == 'bacon_01': t = t.replace('0','A').replace('1','B')
-            elif name == 'bacon_io': t = t.replace('I','A').replace('O','B')
-            bacon_map = {
-                'AAAAA':'A','AAAAB':'B','AAABA':'C','AAABB':'D','AABAA':'E',
+            r = _b64.b32decode(t.upper()+'='*((8-len(t)%8)%8)).decode('utf-8',errors='ignore')
+            return r if len(r)>2 else None
+        except Exception: return None
+
+    def _hexd(t):
+        try:
+            c = t.replace(' ','').replace('0x','').replace('\\x','')
+            if all(x in '0123456789abcdefABCDEF' for x in c) and len(c)%2==0:
+                return bytes.fromhex(c).decode('utf-8',errors='ignore')
+        except Exception: pass
+        return None
+
+    def _bacon(t, mode):
+        try:
+            s = t.upper().replace(' ','')
+            if mode=='01': s=s.replace('0','A').replace('1','B')
+            elif mode=='io': s=s.replace('I','A').replace('O','B')
+            bm={'AAAAA':'A','AAAAB':'B','AAABA':'C','AAABB':'D','AABAA':'E',
                 'AABAB':'F','AABBA':'G','AABBB':'H','ABAAA':'I','ABAAB':'J',
                 'ABABA':'K','ABABB':'L','ABBAA':'M','ABBAB':'N','ABBBA':'O',
                 'ABBBB':'P','BAAAA':'Q','BAAAB':'R','BAABA':'S','BAABB':'T',
-                'BABAA':'U','BABAB':'V','BABBA':'W','BABBB':'X','BBAAA':'Y','BBAAB':'Z'
-            }
-            result = ''
-            clean = re.sub(r'[^AB]','',t)
-            if len(clean) < 5: return None
-            for i in range(0, len(clean)-4, 5):
-                chunk = clean[i:i+5]
-                result += bacon_map.get(chunk, '?')
-            return result.lower() if '?' not in result and result else None
-        except: return None
+                'BABAA':'U','BABAB':'V','BABBA':'W','BABBB':'X','BBAAA':'Y','BBAAB':'Z'}
+            cl = re.sub(r'[^AB]','',s)
+            if len(cl)<5: return None
+            r=''.join(bm.get(cl[i:i+5],'?') for i in range(0,len(cl)-4,5))
+            return r.lower() if '?' not in r and r else None
+        except Exception: return None
 
-    if name in ('polybius', 'polybius_reverse'):
-        try:
-            pairs = re.findall(r'[1-5][1-5]', text.replace(' ',''))
-            if len(pairs) < 2: return None
-            sq = 'ABCDEFGHIKLMNOPQRSTUVWXYZ'
-            result = ''
-            for p in pairs:
-                r,c = int(p[0])-1, int(p[1])-1
-                idx = r*5+c
-                result += sq[idx] if idx < 25 else '?'
-            return result.lower() if '?' not in result else None
-        except: return None
+    def _rail(t, rails):
+        t2 = t.replace(' ','') if len(t.replace(' ',''))>4 else t
+        n = len(t2)
+        if n<rails: return None
+        fence=[[] for _ in range(rails)]; rail,d=0,1
+        for i in range(n):
+            fence[rail].append(i)
+            if rail==0: d=1
+            elif rail==rails-1: d=-1
+            rail+=d
+        order=[i for r in fence for i in r]; res=['']*n
+        for i,pos in enumerate(order): res[pos]=t2[i]
+        return ''.join(res)
 
-    if name == 'tap_code':
-        try:
-            pairs = re.findall(r'(\d)\s+(\d)', text)
-            if not pairs: return None
-            sq = 'ABDEFGHIKLMNOPQRSTUVWXYZ'
-            result = ''
-            for r,c in pairs:
-                idx = (int(r)-1)*5 + (int(c)-1)
-                result += sq[idx] if 0 <= idx < len(sq) else '?'
-            return result.lower() if '?' not in result else None
-        except: return None
+    def _scytale(t, cols):
+        t2=t.replace(' ',''); n=len(t2)
+        if n<cols: return None
+        rows=(n+cols-1)//cols; pad=t2.ljust(rows*cols)
+        return ''.join(pad[c*rows+r] for r in range(rows) for c in range(cols)).strip()
 
-    if name == 'nihilist_decode':
-        try:
-            pairs = re.findall(r'\b(\d{2})\b', text)
-            if len(pairs) < 3: return None
-            sq = 'ABCDEFGHIKLMNOPQRSTUVWXYZ'
-            nums = [int(p) for p in pairs]
-            for sub in [0,11,12,13,21,22,23,24,25,31,32,33,34,35,41,42,43,44,45]:
-                result = ''
-                ok = True
-                for n in nums:
-                    v = n - sub
-                    r2, c2 = v // 10 - 1, v % 10 - 1
-                    if not (0 <= r2 < 5 and 0 <= c2 < 5):
-                        ok = False; break
-                    result += sq[r2*5+c2]
-                if ok and result:
-                    return result.lower()
-            return None
-        except: return None
-    if name in ('railfence2','railfence3','railfence4','railfence5'):
-        try:
-            rails = int(name[-1])
-            t = text.replace(' ','') if len(text.replace(' ','')) > 4 else text
-            n = len(t)
-            if n < rails: return None
-            fence = [[] for _ in range(rails)]
-            rail, direction = 0, 1
-            for i in range(n):
-                fence[rail].append(i)
-                if rail == 0: direction = 1
-                elif rail == rails-1: direction = -1
-                rail += direction
-            order = [i for r in fence for i in r]
-            result = [''] * n
-            for i, pos in enumerate(order):
-                result[pos] = t[i]
-            return ''.join(result)
-        except: return None
+    def _vigenere_key(t, key):
+        result,ki='',0
+        for c in t:
+            if c.isalpha():
+                base=ord('A') if c.isupper() else ord('a')
+                shift=ord(key[ki%len(key)].upper())-ord('A')
+                result+=chr((ord(c.upper())-ord('A')-shift)%26+base); ki+=1
+            else: result+=c
+        return result
 
-    if name in ('scytale2','scytale3','scytale4','scytale5'):
-        try:
-            cols = int(name[-1])
-            t = text.replace(' ','')
-            n = len(t)
-            if n < cols: return None
-            rows = (n + cols - 1) // cols
-            padded = t.ljust(rows * cols)
-            result = ''
-            for r in range(rows):
-                for c in range(cols):
-                    result += padded[c * rows + r]
-            return result.strip()
-        except: return None
+    # Static dispatch
+    _S = {
+        'reverse':      lambda t: t[::-1],
+        'atbash':       lambda t: ''.join(chr(65+25-(ord(c)-65)) if c.isupper() else
+                                          chr(97+25-(ord(c)-97)) if c.islower() else c for c in t),
+        'base64':       lambda t: (lambda r: r if len(r)>2 else None)(
+                            _b64.b64decode(t+'==').decode('utf-8',errors='ignore')),
+        'base64url':    lambda t: (lambda r: r if len(r)>2 else None)(
+                            _b64.urlsafe_b64decode(t+'==').decode('utf-8',errors='ignore')),
+        'base32':       _b32,
+        'hex':          _hexd,
+        'url':          lambda t: urllib.parse.unquote(t) if urllib.parse.unquote(t)!=t else None,
+        'html':         lambda t: _html.unescape(t) if _html.unescape(t)!=t else None,
+        'morse':        decode_morse,
+        'binary':       lambda t: (''.join(chr(int(tk,2)) for tk in t.strip().split())
+                                   if all(all(c in '01' for c in tk) and len(tk)==8
+                                          for tk in t.strip().split()) else None),
+        'a1z26':        lambda t: (''.join(chr(n+64) for n in
+                                   [int(x) for x in re.split(r'[\s,.\-]+',t.strip()) if x])
+                                   if all(1<=int(x)<=26 for x in re.split(r'[\s,.\-]+',t.strip()) if x) else None),
+        'a1z26_reverse':lambda t: (''.join(chr(ord('z')-n+1)
+                                   for n in [int(x) for x in re.split(r'[\s,\-]+',t.strip()) if x.isdigit()]
+                                   if 1<=n<=26) or None),
+        'caesar_brute': lambda t: None,
+        'polybius':     lambda t: (''.join('ABCDEFGHIKLMNOPQRSTUVWXYZ'[(int(p[0])-1)*5+(int(p[1])-1)]
+                                   for p in re.findall(r'[1-5][1-5]',t.replace(' ',''))
+                                   if (int(p[0])-1)*5+(int(p[1])-1)<25).lower() or None),
+        'tap_code':     lambda t: (''.join('ABDEFGHIKLMNOPQRSTUVWXYZ'[(int(a)-1)*5+(int(b)-1)]
+                                   for a,b in re.findall(r'(\d)\s+(\d)',t)
+                                   if 0<=(int(a)-1)*5+(int(b)-1)<24).lower() or None),
+        'bacon_ab':     lambda t: _bacon(t,'ab'),
+        'bacon_01':     lambda t: _bacon(t,'01'),
+        'bacon_io':     lambda t: _bacon(t,'io'),
+        'phone_keypad': lambda t: (''.join({'2':'a','22':'b','222':'c','3':'d','33':'e','333':'f',
+                                    '4':'g','44':'h','444':'i','5':'j','55':'k','555':'l',
+                                    '6':'m','66':'n','666':'o','7':'p','77':'q','777':'r',
+                                    '7777':'s','8':'t','88':'u','888':'v','9':'w','99':'x',
+                                    '999':'y','9999':'z'}.get(tk,'?')
+                                    for tk in t.strip().split()) or None),
+        'nibble_swap':  lambda t: (lambda r: r if _pr(r)>0.8 else None)(
+                            ''.join(chr(((ord(c)&0x0F)<<4)|((ord(c)&0xF0)>>4)) for c in t)),
+        'bits_reverse': lambda t: (lambda r: r if _pr(r)>0.8 else None)(
+                            ''.join(chr(int(f'{ord(c):08b}'[::-1],2)) for c in t)),
+        'mirror_alphabet':lambda t: ''.join(
+                            chr((ord('A') if c.isupper() else ord('a'))+25-
+                                (ord(c)-(ord('A') if c.isupper() else ord('a'))))
+                            if c.isalpha() else c for c in t),
+        'dvorak_to_qwerty':lambda t: ''.join(
+                            'qwertyuiopasdfghjklzxcvbnm'['pyfgcrlaoeuidhtnsqjkxbmwvz'.index(c)]
+                            if c in 'pyfgcrlaoeuidhtnsqjkxbmwvz' else c for c in t.lower()),
+        'keyboard_shift':lambda t: ''.join(
+                            'pyfgcrlaoeuidhtnsqjkxbmwvz'['qwertyuiopasdfghjklzxcvbnm'.index(c)]
+                            if c in 'qwertyuiopasdfghjklzxcvbnm' else c for c in t.lower()),
+        'leet_speak_decode':lambda t: ''.join(
+                            {'0':'o','1':'i','3':'e','4':'a','5':'s','7':'t','@':'a','!':'i'}.get(c,c)
+                            for c in t.lower()),
+        'decimal_bytes':lambda t: (lambda nums: ''.join(chr(n) for n in nums)
+                                   if len(nums)>=2 and all(32<=n<=126 for n in nums) else None)(
+                            [int(x) for x in re.split(r'[\s,]+',t.strip()) if x.isdigit()]),
+    }
 
-    if name.startswith('vigenere_'):
-        try:
-            key_map = {'key':'key','secret':'secret','password':'password',
-                       'crypto':'crypto','flag':'flag'}
-            key = key_map.get(name[9:])
-            if not key: return None
-            result = ''
-            ki = 0
-            for c in text:
-                if c.isalpha():
-                    base = ord('A') if c.isupper() else ord('a')
-                    shift = ord(key[ki % len(key)].upper()) - ord('A')
-                    result += chr((ord(c.upper()) - ord('A') - shift) % 26 + base)
-                    ki += 1
-                else:
-                    result += c
-            return result
-        except: return None
-
-    if name.startswith('xor_0x'):
-        try:
-            key = int(name[4:], 16)
-            result = ''.join(chr(ord(c) ^ key) for c in text)
-            if sum(1 for c in result if 32 <= ord(c) <= 126) / max(len(result),1) > 0.8:
-                return result
-            return None
-        except: return None
-
-    if name == 'phone_keypad':
-        try:
-            keymap = {'2':'a','22':'b','222':'c','3':'d','33':'e','333':'f',
-                      '4':'g','44':'h','444':'i','5':'j','55':'k','555':'l',
-                      '6':'m','66':'n','666':'o','7':'p','77':'q','777':'r','7777':'s',
-                      '8':'t','88':'u','888':'v','9':'w','99':'x','999':'y','9999':'z'}
-            tokens = text.strip().split()
-            result = ''.join(keymap.get(t,'?') for t in tokens)
-            return result if '?' not in result and result else None
-        except: return None
-
-    if name == 'nibble_swap':
-        try:
-            result = ''.join(chr(((ord(c)&0x0F)<<4)|((ord(c)&0xF0)>>4)) for c in text)
-            return result if sum(1 for c in result if 32<=ord(c)<=126)/max(len(result),1)>0.8 else None
-        except: return None
-
-    if name == 'bits_reverse':
-        try:
-            result = ''.join(chr(int(f'{ord(c):08b}'[::-1],2)) for c in text)
-            return result if sum(1 for c in result if 32<=ord(c)<=126)/max(len(result),1)>0.8 else None
-        except: return None
-
-    if name == 'mirror_alphabet':
-        try:
-            result = ''
-            for c in text:
-                if c.isalpha():
-                    base = ord('A') if c.isupper() else ord('a')
-                    result += chr(base + 25 - (ord(c) - base))
-                else:
-                    result += c
-            return result
-        except: return None
-
-    if name == 'dvorak_to_qwerty':
-        try:
-            qwerty = 'qwertyuiopasdfghjklzxcvbnm'
-            dvorak = 'pyfgcrlaoeuidhtnsqjkxbmwvz'
-            result = ''.join(qwerty[dvorak.index(c)] if c in dvorak else c for c in text.lower())
-            return result
-        except: return None
-
-    if name == 'keyboard_shift':
-        try:
-            qwerty = 'qwertyuiopasdfghjklzxcvbnm'
-            dvorak = 'pyfgcrlaoeuidhtnsqjkxbmwvz'
-            result = ''.join(dvorak[qwerty.index(c)] if c in qwerty else c for c in text.lower())
-            return result
-        except: return None
-
-    if name == 'leet_speak_decode':
-        try:
-            leet = {'0':'o','1':'i','3':'e','4':'a','5':'s','7':'t','@':'a','!':'i'}
-            return ''.join(leet.get(c,c) for c in text.lower())
-        except: return None
-
-    if name == 'decimal_bytes':
-        try:
-            nums = [int(x) for x in re.split(r'[\s,]+', text.strip()) if x.isdigit()]
-            if not nums or len(nums) < 2: return None
-            result = ''.join(chr(n) for n in nums if 32 <= n <= 126)
-            return result if len(result) == len(nums) else None
-        except: return None
-
-    if name == 'a1z26_reverse':
-        try:
-            nums = [int(x) for x in re.split(r'[\s,\-]+', text.strip()) if x.isdigit()]
-            if not nums: return None
-            return ''.join(chr(ord('z') - n + 1) for n in nums if 1 <= n <= 26)
-        except: return None
-
+    try:
+        if name in _S: return _S[name](text)
+        if name.startswith('rot') and name[3:].isdigit():
+            n=int(name[3:])
+            return ''.join(chr((ord(c)-65+n)%26+65) if c.isupper() else
+                           chr((ord(c)-97+n)%26+97) if c.islower() else c for c in text)
+        if name.startswith('railfence') and name[9:].isdigit():
+            return _rail(text, int(name[9:]))
+        if name.startswith('scytale') and name[7:].isdigit():
+            return _scytale(text, int(name[7:]))
+        if name.startswith('vigenere_'):
+            key={'key':'key','secret':'secret','password':'password',
+                 'crypto':'crypto','flag':'flag'}.get(name[9:])
+            return _vigenere_key(text, key) if key else None
+        if name.startswith('xor_0x'):
+            key=int(name[4:],16)
+            r=''.join(chr(ord(c)^key) for c in text)
+            return r if _pr(r)>0.8 else None
+    except Exception: pass
     return None
+
 
 def _beam_normsig(text):
     tl = (text or '').strip().lower()
@@ -5126,60 +5058,7 @@ def _normalize_visible(text: str) -> str:
     t = re.sub(r'[^a-z0-9{}:_./ -]+', '', t)
     return t.strip()
 
-def _profile_charsets(data: str):
-    s = data.strip()
-    alpha = ''.join(c for c in s if c.isalpha())
-    upper_alpha = alpha.upper()
-    ic, chi, signal = _ic_signal(s)
-    profile = {
-        'length': len(s),
-        'alpha_len': len(alpha),
-        'alpha_only': bool(s) and all(c.isalpha() for c in s),
-        'digits_onlyish': bool(s) and all(c.isdigit() or c.isspace() for c in s),
-        'adfgvx_only': bool(s) and set(s.replace(' ', '').upper()) <= set('ADFGVX') and len(s.replace(' ', '')) >= 6,
-        'morse_only': bool(s) and all(c in '.- /|\n\t' for c in s),
-        'polybius_pairs': bool(re.fullmatch(r'[1-5\s]+', s)) and len(re.sub(r'\s+', '', s)) >= 4,
-        'binaryish': _binaryish(s),
-        'high_ic': ic > 0.058,
-        'ic': ic,
-        'chi': chi,
-        'signal': signal,
-        'spaces': ' ' in s,
-        'has_digits': any(c.isdigit() for c in s),
-        'has_slashes': '/' in s or '|' in s,
-        'vowel_ratio': (sum(c in 'AEIOUYaeiouy' for c in alpha) / max(len(alpha), 1)) if alpha else 0.0,
-        'uppercase_only': bool(alpha) and alpha == upper_alpha,
-    }
-    profile['likely_bifid'] = profile['alpha_only'] and 8 <= profile['alpha_len'] <= 180 and 'J' not in upper_alpha and 0.030 <= ic <= 0.065
-    profile['likely_porta'] = profile['alpha_only'] and 8 <= profile['alpha_len'] <= 200 and 0.030 <= ic <= 0.070
-    profile['likely_hill'] = profile['alpha_only'] and 4 <= profile['alpha_len'] <= 36 and profile['alpha_len'] % 2 == 0 and ic < 0.080
-    profile['likely_nihilist'] = profile['digits_onlyish'] and len(s.split()) >= 3 and all(len(tok) in (2,3,4) for tok in s.split()[:12])
-    profile['likely_adfgvx'] = profile['adfgvx_only']
-    profile['likely_bacon'] = profile['binaryish'] or (set(re.sub(r'\s+', '', s).upper()) <= set('AB01') and len(re.sub(r'\s+', '', s)) >= 10)
-    profile['likely_layered'] = (profile['signal'] in ('monoalpha','likely_sub','possible_poly') and profile['chi'] > 80) or any(tok in s.lower() for tok in ('==','%2f','\\x','0x'))
-    return profile
 
-def _profile_summary(profile):
-    suspects = []
-    if profile['likely_bacon']:
-        suspects.append('Bacon/binary substitution')
-    if profile['polybius_pairs']:
-        suspects.append('Polybius/Tap code')
-    if profile['likely_nihilist']:
-        suspects.append('Nihilist numeric cipher')
-    if profile['likely_adfgvx']:
-        suspects.append('ADFGVX/ADFGX')
-    if profile['likely_bifid']:
-        suspects.append('Bifid/Polybius-family')
-    if profile['likely_porta']:
-        suspects.append('Porta/Vigenere-family')
-    if profile['likely_hill']:
-        suspects.append('Hill 2x2 possible')
-    if profile['likely_layered']:
-        suspects.append('Layered transform candidate')
-    if not suspects and profile['alpha_only']:
-        suspects.append(f'classical alpha cipher likely (IC={profile["ic"]:.4f}, chi={profile["chi"]:.1f})')
-    return suspects
 
 def _family_for_transform(name: str) -> str:
     if name in ('reverse', 'atbash'):
@@ -5521,31 +5400,6 @@ def _zip_member_findings(data: bytes, engine=None, source_label='ZIP'):
     return findings
 
 
-def _detect_appended_payload(data: bytes):
-    ft = detect_filetype(data)
-    if not ft:
-        return None
-    ext, desc = ft
-    finder = _END_FINDERS.get(ext)
-    if not finder:
-        return None
-    try:
-        end = finder(data, 0)
-    except Exception:
-        return None
-    if not end or end >= len(data):
-        return None
-    tail = data[end:]
-    if len(tail) < 32 or set(tail[:64]) <= {0}:
-        return None
-    tail_ft = detect_filetype(tail)
-    return {
-        'host_type': desc,
-        'host_ext': ext,
-        'host_end': end,
-        'tail': tail,
-        'tail_ft': tail_ft,
-    }
 
 def _smart_boundary(data: bytes, offset: int, ext: str):
     max_sizes = {
@@ -5563,30 +5417,6 @@ def _smart_boundary(data: bytes, offset: int, ext: str):
         return min(len(data), cap)
     return min(nxt, len(data), cap)
 
-def _smart_slice_at_offset(data: bytes, pos: int, ext: str):
-    chunk = data[pos:]
-    finder = _END_FINDERS.get(ext)
-    if finder:
-        try:
-            end = finder(chunk, 0)
-            if end and 0 < end <= len(chunk):
-                return chunk[:end], True, f'bounded using {ext} footer/structure'
-        except Exception:
-            pass
-    next_pos = len(data)
-    for npos, next, _ in find_embedded_files(data[pos+1:]):
-        abs_pos = pos + 1 + npos
-        if abs_pos > pos:
-            next_pos = min(next_pos, abs_pos)
-    candidate = data[pos:next_pos]
-    max_size = {
-        'png': 15_000_000, 'jpg': 15_000_000, 'jpeg': 15_000_000, 'zip': 40_000_000,
-        'pdf': 25_000_000, 'gif': 10_000_000, 'wav': 100_000_000, 'tif': 40_000_000,
-    }.get(ext, 8_000_000)
-    candidate = candidate[:max_size]
-    if len(candidate) >= 32:
-        return candidate, False, 'heuristic boundary via next signature or sane max size'
-    return chunk, False, 'fallback slice remained unbounded'
 
 def find_embedded_files(data: bytes) -> List[Tuple[int, str, str]]:
     found = []
@@ -6310,45 +6140,6 @@ def _export_recovered_candidate(candidate, run_dir, source_name, suffix_index):
         fh.write(candidate['bytes'])
     return out_path
 
-def _maybe_offer_recovered_exports(findings, flags, run_dir, source_name, quiet=False):
-    if not (flags.get('artifact_mode') or flags.get('export_recovered') or flags.get('full_nasty')):
-        return []
-    candidates = _collect_recovered_file_candidates(findings)
-    if not candidates:
-        return []
-    if not quiet:
-        print(f"\n  {C.CYAN}[+] recovered file candidate(s){C.RESET}")
-        for i, c in enumerate(candidates[:5], 1):
-            print(f"    {i}. {c['filetype'][1]}  |  {len(c['bytes']):,} bytes  |  entropy {c['entropy']:.2f}  |  from {c['finding'].method}")
-    exported = []
-    auto = flags.get('export_recovered') and not sys.stdin.isatty()
-    if auto:
-        chosen = '1'
-    elif sys.stdin.isatty() and not quiet:
-        try:
-            chosen = input(f"  {C.CYAN}export recovered file candidate(s)? [n/1/2/all]: {C.RESET}").strip().lower() or 'n'
-        except (EOFError, KeyboardInterrupt):
-            chosen = 'n'
-    else:
-        chosen = 'n'
-    if chosen == 'all':
-        picks = list(range(1, min(len(candidates), 5) + 1))
-    elif chosen.isdigit():
-        val = int(chosen)
-        picks = [val] if 1 <= val <= min(len(candidates), 5) else []
-    else:
-        picks = []
-    for n in picks:
-        c = candidates[n-1]
-        try:
-            out_path = _export_recovered_candidate(c, run_dir, source_name, n)
-            exported.append(out_path)
-            if not quiet:
-                print(f"  {C.GREEN}[+] recovered export: {out_path}{C.RESET}")
-        except Exception as e:
-            if not quiet:
-                print(f"  {C.RED}[!] recovered export failed for candidate {n}: {e}{C.RESET}")
-    return exported
 
 def _artifact_profile(text, raw_bytes=None):
     txt = text or ''
@@ -6434,16 +6225,6 @@ def _analyst_bundle(f):
         'graph': graph
     }
 
-def _render_graph(f):
-    chain = getattr(f, 'chain', []) or []
-    if not chain:
-        return '[input only]'
-    lines = ['[input]']
-    for step in chain:
-        lines.append(f'  -> {step}')
-    if getattr(f, 'filetype', None):
-        lines.append(f'  -> {f.filetype[1]}')
-    return '\n'.join(lines)
 
 def _print_analyst_block(f, compact=False):
     print(f"       {C.CYAN}interpret:{C.RESET} {getattr(f,'analyst_interpretation','')}")
@@ -7047,329 +6828,16 @@ def _cache_key_file(data: bytes, filename: str, flags: dict, max_depth: int):
         max_depth,
     )
 
-def _candidate_raw_blobs_from_text(data: str):
-    cands = []
-    seen = set()
 
-    def add(label, raw):
-        if not raw or len(raw) < 4:
-            return
-        h = (label, hashlib.sha1(raw).hexdigest())
-        if h in seen:
-            return
-        seen.add(h)
-        cands.append((label, raw))
 
-    try:
-        add('text-bytes', data.encode('latin-1', errors='ignore'))
-    except Exception:
-        pass
 
-    s = (data or '').strip()
-    if not s:
-        return cands
 
-    hx = re.sub(r'(?:0x|\\x|\s|:|,)', '', s, flags=re.I)
-    if len(hx) >= 8 and len(hx) % 2 == 0 and re.fullmatch(r'[0-9a-fA-F]+', hx):
-        try:
-            add('hex-bytes', bytes.fromhex(hx))
-        except Exception:
-            pass
 
-    b64ish = ''.join(s.split())
-    if len(b64ish) >= 8 and re.fullmatch(r'[A-Za-z0-9+/=_-]+', b64ish):
-        for label, decoder in (
-            ('base64-bytes', lambda z: base64.b64decode(z + '=' * ((4 - len(z) % 4) % 4))),
-            ('base64url-bytes', lambda z: base64.urlsafe_b64decode(z + '=' * ((4 - len(z) % 4) % 4))),
-        ):
-            try:
-                raw = decoder(b64ish)
-                if raw:
-                    add(label, raw)
-            except Exception:
-                pass
 
-    b32ish = ''.join(s.upper().split())
-    if len(b32ish) >= 8 and re.fullmatch(r'[A-Z2-7=]+', b32ish):
-        try:
-            raw = base64.b32decode(b32ish + '=' * ((8 - len(b32ish) % 8) % 8))
-            if raw:
-                add('base32-bytes', raw)
-        except Exception:
-            pass
 
-    return cands
 
-def _xor_route_allowed(raw: bytes) -> bool:
-    if not raw or len(raw) < 4:
-        return False
-    ent = _hio_entropy(raw)
-    try:
-        txt = raw.decode('utf-8', errors='ignore')
-    except Exception:
-        txt = ''
-    pr = _hio_printable_ratio(txt) if txt else 0.0
-    return ent >= 3.2 or pr < 0.92 or any(b == 0 for b in raw)
 
-def _break_repeating_xor(data: bytes, min_k=2, max_k=12):
-    if len(data) < 24:
-        return []
-    keysize_scores = []
-    for k in range(min_k, min(max_k, len(data)//4) + 1):
-        chunks = [data[i:i+k] for i in range(0, min(len(data), k*10), k)]
-        full = [c for c in chunks if len(c) == k]
-        if len(full) < 4:
-            continue
-        pairs = list(zip(full, full[1:]))[:6]
-        dist = sum(_hamming_distance(x, y) / k for x, y in pairs) / len(pairs)
-        keysize_scores.append((dist, k))
-    out = []
-    seen = set()
-    for _, k in sorted(keysize_scores)[:6]:
-        key_bytes = []
-        total_score = 0
-        for i in range(k):
-            block = bytes(data[j] for j in range(i, len(data), k))
-            best = _single_byte_xor_best(block)
-            if not best:
-                key_bytes = []
-                break
-            sc, kb, _ = best
-            total_score += sc
-            key_bytes.append(kb)
-        if not key_bytes:
-            continue
-        key = bytes(key_bytes)
-        decoded = bytes(data[i] ^ key[i % len(key)] for i in range(len(data)))
-        text = decoded.decode('utf-8', errors='ignore')
-        if not text:
-            continue
-        pr = _hio_printable_ratio(text)
-        if pr < 0.78:
-            continue
-        score = _xor_rank_text(text, key.hex()) + total_score // max(len(key), 1)
-        if _looks_plaintext(text):
-            score += 18
-        norm = _normalize_visible(text)[:320]
-        if norm in seen or score < 36:
-            continue
-        seen.add(norm)
-        out.append((score, key, text))
-    out.sort(reverse=True)
-    return [(key, text) for score, key, text in out[:12]]
 
-def _patched_text_quality(self, text: str):
-    if not text or not text.strip():
-        return ('LOW', 'empty result')
-    ratio = _hio_printable_ratio(text)
-    alpha = _hio_alpha_ratio(text)
-    score = _score_candidate(text=text, wordlist=self.wordlist, confidence='LOW')
-    if re.search(r'(flag|ctf|rrsw|htb|picoctf|thm)\{[^}]{3,}\}', text.lower()):
-        return ('CONFIRMED', f'scored {score} and matches flag pattern')
-    if score >= 62 or (ratio > 0.96 and alpha > 0.55 and (is_mostly_words(text, self.wordlist, 0.20) if self.wordlist else False)):
-        return ('HIGH', f'scored {score} with strong plaintext indicators')
-    if score >= 38 or (ratio > 0.92 and alpha > 0.40):
-        return ('MEDIUM', f'scored {score} and is mostly readable')
-    if ratio > 0.78:
-        return ('LOW', f'scored {score} with partial plaintext indicators')
-    return ('LOW', f'scored {score} with weak plaintext indicators')
-
-def _patched_try_bases(self, data: str):
-    findings = []
-    bases = [
-        ('Base64', decode_base64),
-        ('Base64 (URL-safe)', decode_base64_url),
-        ('Base64 (MIME)', decode_base64_mime),
-        ('Base32', decode_base32),
-        ('Base32 (Extended Hex)', decode_base32hex),
-        ('Base32 (Crockford)', decode_base32_crockford),
-        ('Base16 (Hex)', decode_base16),
-        ('Base85 (Python)', decode_base85),
-        ('Base85 (ASCII85/Adobe)', decode_ascii85),
-        ('Base85 (Z85/ZeroMQ)', decode_z85),
-        ('Base58 (Bitcoin)', decode_base58),
-        ('Base58 (Flickr)', decode_base58_flickr),
-        ('Base62', decode_base62),
-        ('Base45', decode_base45),
-        ('Base91', decode_base91),
-        ('Base92', decode_base92),
-        ('Base36', decode_base36),
-        ('Base10 (Decimal bytes)', decode_base10),
-        ('Base8 (Octal)', decode_base8),
-        ('Base2 (Binary)', decode_base2),
-    ]
-    for name, fn in bases:
-        result = fn(data)
-        if not result:
-            continue
-        ft = detect_filetype(result)
-        if ft:
-            findings.append(Finding(method=name, result_bytes=result, filetype=ft,
-                                    confidence='HIGH', note=f'decoded binary -> {ft[1]}'))
-            continue
-        text = safe_decode_bytes(result)
-        conf, note = self._text_quality(text)
-        if conf in ('CONFIRMED', 'HIGH', 'MEDIUM'):
-            findings.append(Finding(method=name, result_text=text,
-                                    confidence=conf, note=note))
-    return findings
-
-def _patched_try_hex(self, data: str):
-    findings = []
-    for label, fn in [('Hexadecimal', decode_hex), ('Hex (escaped \\x/% format)', decode_hex_escaped)]:
-        result = fn(data)
-        if not result:
-            continue
-        ft = detect_filetype(result)
-        if ft:
-            findings.append(Finding(method=f'{label} -> Binary', result_bytes=result,
-                                    filetype=ft, confidence='HIGH',
-                                    note=f'hex decoded to {ft[1]}'))
-            continue
-        text = safe_decode_bytes(result)
-        conf, note = self._text_quality(text)
-        if conf in ('CONFIRMED', 'HIGH', 'MEDIUM'):
-            findings.append(Finding(method=f'{label} -> ASCII', result_text=text,
-                                    confidence=conf, note=note))
-    return findings
-
-def _patched_try_binary(self, data: str):
-    findings = []
-    for label, fn in [('Binary (01 string)', decode_base2), ('Octal', decode_base8), ('Decimal bytes', decode_base10)]:
-        result = fn(data)
-        if not result:
-            continue
-        ft = detect_filetype(result)
-        if ft:
-            findings.append(Finding(method=label, result_bytes=result, filetype=ft,
-                                    confidence='HIGH', note=f'decoded binary -> {ft[1]}'))
-            continue
-        text = safe_decode_bytes(result)
-        conf, note = self._text_quality(text)
-        if conf in ('CONFIRMED', 'HIGH', 'MEDIUM'):
-            findings.append(Finding(method=label, result_text=text,
-                                    confidence=conf, note=note))
-    return findings
-
-def _patched_run_text_passes(self, data: str):
-    cache_key = ('text_passes', hashlib.sha1(data.encode('utf-8', errors='ignore')).hexdigest(), tuple(sorted(k for k,v in self.flags.items() if v)))
-    hit = _cache_get(cache_key)
-    if hit is not None:
-        return _clone_findings(hit)
-    findings = []
-    findings += self._try_structural(data)
-    findings += self._try_rots(data)
-    findings += self._try_bases(data)
-    findings += self._try_hex(data)
-    findings += self._try_binary(data)
-    findings += self._try_url(data)
-    findings += self._try_morse(data)
-    findings += self._try_ciphers(data)
-    findings += self._try_xor(data)
-    findings += self._try_misc(data)
-    findings = _finalize_findings(findings, 'TEXT_PASS', self.wordlist)
-    _cache_put(cache_key, _clone_findings(findings))
-    return findings
-
-def _patched_try_xor(self, data: str):
-    findings = []
-    candidates = []
-    seen = set()
-    def add_blob(blob):
-        if blob and blob not in seen:
-            seen.add(blob)
-            candidates.append(blob)
-    try:
-        add_blob(data.encode('latin-1'))
-    except Exception:
-        pass
-    for fn in (decode_hex, decode_base64, decode_base64_url, decode_base32):
-        try:
-            b = fn(data)
-            if b:
-                add_blob(b)
-        except Exception:
-            pass
-    short_input = len(data.strip()) < 12
-    for raw in candidates:
-        for key, text in try_xor_keys(raw):
-            conf, note = self._text_quality(text)
-            if conf in ('HIGH', 'MEDIUM'):
-                score = _xor_rank_text(text, f'0x{key:02X}')
-                if short_input and score < 35:
-                    continue
-                findings.append(Finding(
-                    method=f'XOR single-byte (key=0x{key:02X})',
-                    result_text=text, confidence=conf, note=note))
-        for key, text in try_xor_multibyte(raw):
-            conf, note = self._text_quality(text)
-            if conf in ('HIGH', 'MEDIUM'):
-                score = _xor_rank_text(text, key.hex())
-                if short_input and score < 45:
-                    continue
-                findings.append(Finding(
-                    method=f'XOR multi-byte (key=0x{key.hex().upper()})',
-                    result_text=text, confidence=conf, note=note))
-        for score, key, text, ksize in break_repeating_key_xor(raw, top_n=6):
-            conf, note = self._text_quality(text)
-            if conf in ('HIGH', 'MEDIUM') or score > 40:
-                findings.append(Finding(
-                    method=f'XOR repeating-key (keysize={ksize}, key=0x{key.hex().upper()})',
-                    result_text=text,
-                    confidence=('HIGH' if score > 70 else conf),
-                    note=f'{note}; repeating-key xor keysize candidate {ksize}'))
-    return findings
-
-_original_try_ciphers  = AnalysisEngine._try_ciphers
-
-def _patched_try_ciphers(self, data: str) -> List[Finding]:
-    findings = _original_try_ciphers(self, data)
-    profile = _classify_cipher_profile(data, b'')
-    profile_finding = _cipher_profile_finding(data, b'')
-    if profile_finding:
-        findings.append(profile_finding)
-    hints = _parameter_hint_finding(data, b'')
-    if hints:
-        findings.append(hints)
-    alpha = ''.join(c for c in data if c.isalpha())
-    if len(alpha) >= 10:
-        periods = estimate_vigenere_key_lengths(data, top_n=6)
-        for score, key, plain, period in _recover_vigenere_candidates(data, periods=periods, top_n=8):
-            conf, note = self._text_quality(plain)
-            total = score + (_ngram_score(plain) * 8.0) + (_word_density(plain, self.wordlist) * 40.0)
-            if conf in ('HIGH', 'MEDIUM') or total > 10:
-                findings.append(Finding(
-                    method=f'Vigenère full recovery (key="{key}", period={period})',
-                    result_text=plain,
-                    confidence='HIGH' if total > 28 else conf,
-                    note=(note + f'; recovered key candidate {key}; period {period}')[:260]
-                ))
-        if 0.055 <= profile['ic'] <= 0.085 and len(alpha) >= 12:
-            aff_best = []
-            for a in [1,3,5,7,9,11,15,17,19,21,23,25]:
-                for b in range(26):
-                    plain = decode_affine(data, a, b)
-                    if not plain:
-                        continue
-                    score = (_ngram_score(plain) * 5.0) + (_word_density(plain, self.wordlist) * 35.0) - min(_chi_squared_english(plain), 200.0) / 30.0
-                    aff_best.append((score, a, b, plain))
-            aff_best.sort(reverse=True)
-            for score, a, b, plain in aff_best[:4]:
-                conf, note = self._text_quality(plain)
-                if conf in ('HIGH', 'MEDIUM') or score > 8:
-                    findings.append(Finding(method=f'Affine candidate (a={a}, b={b})', result_text=plain, confidence=conf, note=(note + '; affine parameters ranked by tetragrams / words')[:240]))
-        for width in estimate_transposition_widths(data, top_n=4):
-            plain = _columnar_untranspose(data, width)
-            if plain:
-                conf, note = self._text_quality(plain)
-                score = (_ngram_score(plain) * 6.0) + (_word_density(plain, self.wordlist) * 24.0)
-                if conf in ('HIGH','MEDIUM') or score > 4:
-                    findings.append(Finding(method=f'Columnar/width candidate ({width})', result_text=plain, confidence=conf, note=(note + '; width chosen by IC / ngram ranking')[:240]))
-        if profile['family'].startswith('monoalphabetic') or profile['family'].startswith('transposition'):
-            freq = collections.Counter(c.lower() for c in data if c.isalpha())
-            common = ''.join(ch for ch, _ in freq.most_common(8))
-            findings.append(Finding(method='Substitution Helper', result_text='top ciphertext letters: ' + common + '\ncommon english targets: etaoinsh', confidence='LOW', note='partial progress helper for hard monoalphabetic cases'))
-    return findings
 
 def _get_active_flags(config=None):
     if isinstance(config, dict):
@@ -7543,7 +7011,6 @@ def _fresh_analyze_url(self, url: str):
     return self.analyze_string(text, url)
 
 def _try_ciphers(self, data: str) -> List[Finding]:
-    findings = _original_try_ciphers(self, data)
     flags = _get_active_flags(getattr(self, 'flags', None))
     findings.extend(_monoalphabetic_findings(data, self.wordlist, full_nasty=flags.get('full_nasty', False)))
     return findings
@@ -8709,14 +8176,6 @@ class _ProgressReporter:
 
 _ACTIVE_PROGRESS: Optional['_ProgressReporter'] = None
 
-AnalysisEngine.__init__            = _engine_init
-AnalysisEngine._text_quality       = _patched_text_quality
-AnalysisEngine._try_bases          = _patched_try_bases
-AnalysisEngine._try_hex            = _patched_try_hex
-AnalysisEngine._try_binary         = _patched_try_binary
-AnalysisEngine._run_text_passes    = _patched_run_text_passes
-AnalysisEngine._try_xor            = _patched_try_xor
-AnalysisEngine._try_ciphers        = _patched_try_ciphers
 AnalysisEngine.analyze             = _fresh_analyze_string
 AnalysisEngine.analyze_string      = _fresh_analyze_string
 AnalysisEngine.analyze_file        = _analyze_file
@@ -9342,17 +8801,6 @@ def _shell_show_finding(f, idx):
     if getattr(f, 'child_count', 0):
         print(f"        children   : {getattr(f, 'child_count', 0)}")
 
-def _shell_stats(findings):
-    if not findings:
-        print(f"  {C.GREY}no findings loaded{C.RESET}")
-        return
-    conf = collections.Counter(getattr(f, 'confidence', 'LOW') for f in findings)
-    sigs = collections.Counter(getattr(f, 'rrsw_signal', 'RRSW-NOISE') for f in findings)
-    profiles = collections.Counter(p for f in findings for p in (getattr(f, 'artifact_profile', []) or []))
-    print(f"  {C.CYAN}findings:{C.RESET} {len(findings)}  |  confirmed {conf.get('CONFIRMED',0)}  high {conf.get('HIGH',0)}  medium {conf.get('MEDIUM',0)}  low {conf.get('LOW',0)}")
-    print(f"  {C.CYAN}signals:{C.RESET} {', '.join(f'{k}:{v}' for k,v in sigs.items())}")
-    if profiles:
-        print(f"  {C.CYAN}artifact profiles:{C.RESET} {', '.join(f'{k}:{v}' for k,v in profiles.most_common(6))}")
 
 def _shell_analyze_blob(blob, label, flags, output_base, wordlist, quiet, save_json, max_depth, stegopw_wordlist):
     engine = AnalysisEngine(wordlist=wordlist, output_dir=output_base,
